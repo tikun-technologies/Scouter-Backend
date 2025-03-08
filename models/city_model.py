@@ -1,4 +1,4 @@
-from config.df_config import CITY_COLLECTION
+from config.db_config import CITY_COLLECTION
 from marshmallow import Schema,fields,validate
 
 

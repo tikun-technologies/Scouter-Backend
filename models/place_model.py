@@ -1,4 +1,4 @@
-from config.df_config import PLACE_COLLECTION
+from config.db_config import PLACE_COLLECTION
 from marshmallow import Schema,fields,validate
 from pymongo import UpdateOne
 

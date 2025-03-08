@@ -12,7 +12,7 @@ def get_places():
     """Fetch places using filters and pagination."""
     try:
         data = request.get_json()
-        filters = apply_filters({}, data.get("filterInfo", []))
+        filters = apply_filters({}, data)
         page = int(data.get("page", 1))
         page_size = int(data.get("pageSize", 10))
 
@@ -20,6 +20,7 @@ def get_places():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # ✅ Create a New Place
 @place_bp.route("/insert", methods=["POST"])
@@ -55,7 +56,7 @@ def update_place():
     
 # ✅ Update current popularity Multiple
 @place_bp.route("/update", methods=["POST"])
-def update_place():
+def update_current_popularity():
     """Update an existing place by PlaceId."""
     try:
         data = request.get_json()

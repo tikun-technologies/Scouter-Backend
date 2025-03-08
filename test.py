@@ -8,7 +8,7 @@ from datetime import datetime
 fake = Faker()
 
 # Connect to MongoDB
-from config.df_config import PLACE_COLLECTION
+from config.db_config import PLACE_COLLECTION
 # Categories of places
 CATEGORIES = ["Restaurant", "Park", "Museum", "Hotel"]
 
@@ -29,7 +29,7 @@ def generate_random_place():
     }
 
 # Generate 100 random places
-random_places = [generate_random_place() for _ in range(100)]
+random_places = [generate_random_place() for _ in range(10000)]
 
 # Insert into MongoDB
 inserted = PLACE_COLLECTION.insert_many(random_places)
