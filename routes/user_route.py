@@ -1,13 +1,14 @@
 import uuid
 from flask import Blueprint, request, jsonify
 from models.user_model import User
-from utils.helper import apply_filters
+from utils.helper import apply_filters,protected
 
 
 user_bp = Blueprint("user", __name__)
 
 # ✅ Get users (Read with Filters & Pagination)
 @user_bp.route("/", methods=["POST"])
+@protected
 def get_users():
     """Fetch users using filters and pagination."""
     try:
@@ -23,6 +24,7 @@ def get_users():
 
 # ✅ Create a New user
 @user_bp.route("/insert", methods=["POST"])
+@protected
 def create_user():
     """Insert a new user into the database."""
     try:
@@ -37,6 +39,7 @@ def create_user():
 
 # ✅ Update an Existing user
 @user_bp.route("/update", methods=["POST"])
+@protected
 def update_user():
     """Update an existing user by UserId."""
     try:
@@ -56,6 +59,7 @@ def update_user():
 
 # ✅ Delete a user
 @user_bp.route("/delete", methods=["POST"])
+@protected
 def delete_user(user_id):
     """Delete a user by UserId."""
     try:

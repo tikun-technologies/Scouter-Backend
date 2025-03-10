@@ -1,13 +1,15 @@
 import uuid
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt_identity
 from models.place_model import Place
-from utils.helper import apply_filters
+from utils.helper import apply_filters,protected, upload_multiple_files
 
 
 place_bp = Blueprint("place", __name__)
 
 # ✅ Get Places (Read with Filters & Pagination)
-@place_bp.route("/", methods=["POST"])
+@place_bp.route("/list", methods=["POST"])
+@protected
 def get_places():
     """Fetch places using filters and pagination."""
     try:
@@ -24,6 +26,7 @@ def get_places():
 
 # ✅ Create a New Place
 @place_bp.route("/insert", methods=["POST"])
+@protected
 def create_place():
     """Insert a new place into the database."""
     try:
@@ -31,6 +34,9 @@ def create_place():
         _id=str(uuid.uuid4())
         place_data["PlaceId"]=_id
         place_data["_id"]=_id
+        place_data["CreatedBy"]=get_jwt_identity()
+        place_data["ImagesUrl"]=",".join(upload_multiple_files(place_data["MigratedImages"].split(",")))
+        place_data.pop("MigratedImages")
         inserted_id = Place.insert_place(place_data)
         return jsonify({"message": "Place added successfully", "id": inserted_id}), 201
     except Exception as e:
@@ -38,6 +44,7 @@ def create_place():
 
 # ✅ Update an Existing Place
 @place_bp.route("/update", methods=["POST"])
+@protected
 def update_place():
     """Update an existing place by PlaceId."""
     try:
@@ -56,6 +63,7 @@ def update_place():
     
 # ✅ Update current popularity Multiple
 @place_bp.route("/update", methods=["POST"])
+@protected
 def update_current_popularity():
     """Update an existing place by PlaceId."""
     try:
@@ -71,6 +79,7 @@ def update_current_popularity():
 
 # ✅ Delete a Place
 @place_bp.route("/delete", methods=["POST"])
+@protected
 def delete_place(place_id):
     """Delete a place by PlaceId."""
     try:

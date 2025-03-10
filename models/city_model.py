@@ -4,7 +4,7 @@ from marshmallow import Schema,fields,validate
 
 class CitySchema(Schema):
   
-    _id = fields.Str(dump_only=True)  # _id will be the same as CityId
+    _id = fields.Str()  # _id will be the same as CityId
     CityId = fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()

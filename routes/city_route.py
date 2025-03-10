@@ -1,21 +1,22 @@
 import uuid
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt_identity
 from models.city_model import City
-from utils.helper import apply_filters
+from utils.helper import apply_filters,protected
 
 
 city_bp = Blueprint("city", __name__)
 
 # ✅ Get citys (Read with Filters & Pagination)
-@city_bp.route("/", methods=["POST"])
+@city_bp.route("/list", methods=["POST"])
+@protected
 def get_citys():
     """Fetch citys using filters and pagination."""
     try:
         data = request.get_json()
-        filters = apply_filters({}, data.get("filterInfo", []))
+        filters = apply_filters({}, data)
         page = int(data.get("page", 1))
         page_size = int(data.get("pageSize", 10))
-
         result = City.get_citys(filters, page, page_size)
         return jsonify(result), 200
     except Exception as e:
@@ -23,6 +24,7 @@ def get_citys():
 
 # ✅ Create a New city
 @city_bp.route("/insert", methods=["POST"])
+@protected
 def create_city():
     """Insert a new city into the database."""
     try:
@@ -30,6 +32,7 @@ def create_city():
         _id=str(uuid.uuid4())
         city_data["CityId"]=_id
         city_data["_id"]=_id
+        city_data["CreatedBy"]=get_jwt_identity()
         inserted_id = City.insert_city(city_data)
         return jsonify({"message": "city added successfully", "id": inserted_id}), 201
     except Exception as e:
@@ -37,6 +40,7 @@ def create_city():
 
 # ✅ Update an Existing city
 @city_bp.route("/update", methods=["POST"])
+@protected
 def update_city():
     """Update an existing city by CityId."""
     try:
@@ -55,6 +59,7 @@ def update_city():
 
 # ✅ Delete a city
 @city_bp.route("/delete", methods=["POST"])
+@protected
 def delete_city(city_id):
     """Delete a city by CityId."""
     try:

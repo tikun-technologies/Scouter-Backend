@@ -11,7 +11,7 @@ class ActivitySchema(Schema):
     ModifiedDate = fields.DateTime()
     ActivityType = fields.Str(required=True) 
     AttachmentType = fields.Str(allow_none=True)
-    ActivityDate = fields.DateTime()
+    ActivityDate = fields.DateTime(allow_none=True)
     StartTime = fields.Str(allow_none=True)
     EndTime = fields.Str(allow_none=True)
     Title = fields.Str()

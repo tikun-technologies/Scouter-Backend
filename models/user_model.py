@@ -4,13 +4,13 @@ from marshmallow import Schema,fields,validate
 
 class userSchema(Schema):
   
-    _id = fields.Str(dump_only=True)  # _id will be the same as userId
+    _id = fields.Str(required=True)  # _id will be the same as userId
     UserId = fields.Str(required=True)
-    CreatedBy = fields.Str(required=True)
-    ModifiedBy = fields.Str(required=True)
-    CreatedDate = fields.DateTime(required=True)
-    ModifiedDate = fields.DateTime(required=True)
-    Name = fields.Str(required=True)
+    # CreatedBy = fields.Str(required=True)
+    # ModifiedBy = fields.Str(required=True)
+    # CreatedDate = fields.DateTime(required=True)
+    # ModifiedDate = fields.DateTime(required=True)
+    Name = fields.Str()
     ProfileImage = fields.Str(allow_none=True)
     Age = fields.Int(allow_none=True)
     Sex = fields.Str(allow_none=True)
@@ -74,7 +74,7 @@ class User:
         if errors:
             return {"error": errors}
         result = USER_COLLECTION.insert_one(data)
-        return str(result.inserted_id)
+        return data
 
     @staticmethod
     def update_user( user_id, update_data):
