@@ -1,5 +1,6 @@
 import uuid
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt_identity
 from models.activity_model import Activity
 from utils.helper import apply_filters,protected, upload_to_azure
 
@@ -32,6 +33,7 @@ def create_activity():
         _id=str(uuid.uuid4())
         activity_data["ActivityId"]=_id
         activity_data["_id"]=_id
+        activity_data["CreatedBy"]=get_jwt_identity()
         type=activity_data["ActivityType"]
         if type=="Video":
             activity_data["AttachmentUrl"]=upload_to_azure(activity_data["MigratedUrl"],"Video")

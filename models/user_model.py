@@ -47,6 +47,7 @@ class userSchema(Schema):
     MigratedProfileImage = fields.Str(allow_none=True)
     DeviceId = fields.Str(allow_none=True)
     PlaceId = fields.Str(allow_none=True)
+    favourite = fields.Dict(required=True)
 
 
 

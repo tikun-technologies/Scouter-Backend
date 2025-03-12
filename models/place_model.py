@@ -17,6 +17,7 @@ class PlaceSchema(Schema):
     Zipcode = fields.Int()
     Latitude = fields.Float(required=True)
     Longitude = fields.Float(required=True)
+    location = fields.Dict(required=True)
     PlaceType = fields.Str()
 
     BusyHoursSun = fields.Str()

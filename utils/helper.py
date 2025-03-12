@@ -99,3 +99,54 @@ def upload_multiple_files(file_list):
             results.append(future.result())
     print(results)
     return results
+
+
+
+def find_closest_place(collection, lat, lon, max_distance=30):
+    """
+    Finds the exact place first.
+    If not found, finds the nearest place within max_distance meters.
+    If no place is found within max_distance, returns None.
+    """
+    # 🔹 Step 1: Check if there's an exact match for the given lat/lon
+    exact_match = collection.find_one({"location.coordinates": [lon, lat]})
+    
+    if exact_match:
+        return exact_match.get("PlaceId")  # ✅ Return exact match if found
+
+    # 🔹 Step 2: Find the nearest place within `max_distance`
+    query_nearby = {
+        "location": {
+            "$nearSphere": {
+                "$geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "$maxDistance": max_distance  # Search within 30 meters
+            }
+        }
+    }
+
+    nearby_result = collection.find_one(query_nearby)
+
+    return nearby_result.get("PlaceId") if nearby_result else None  # ✅ Return nearest or None
+
+
+
+
+
+def format_event(event, favourite_event_ids):
+    print("ids :- ",favourite_event_ids)
+    """Format event object and check if it's a user favorite."""
+    return {
+        "eventId": event.get("ActivityId"),
+        "cityId": event.get("CityId"),
+        "placeId": event.get("PlaceId"),
+        "placeName": event.get("Title"),  # Assuming Title is place name
+        "eventTitle": event.get("Title"),
+        "eventDescription": event.get("Description"),
+        "eventImage": event.get("AttachmentUrl"),
+        "eventDate": event.get("ActivityDate"),
+        "eventViews": event.get("ViewCount", 0),
+        "hashTag": f"{event.get('Hashtag1', '')} {event.get('Hashtag2', '')} {event.get('Hashtag3', '')} {event.get('Hashtag4', '')} {event.get('Hashtag5', '')}".strip(),
+        "favCount": event.get("LikeCount", 0),
+        "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
+        "timeLapse": "D"  # Static value, modify logic if required
+    }
