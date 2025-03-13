@@ -51,7 +51,7 @@ def get_auths():
         result={
             "status":True,
             "data":{
-            "Users":user_data,
+            "User":user_data,
             "UserDevice":device_data,
             "UserId":user_data["UserId"],
             "IsNewUser":is_new_user,

@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+import math
 import uuid
 from flask import jsonify
 from flask_jwt_extended import  jwt_required
@@ -150,3 +151,18 @@ def format_event(event, favourite_event_ids):
         "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
         "timeLapse": "D"  # Static value, modify logic if required
     }
+    
+    
+    
+    
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """Calculates the distance (in meters) between two latitude/longitude points using the Haversine formula."""
+    R = 6371000  # Radius of Earth in meters
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c 

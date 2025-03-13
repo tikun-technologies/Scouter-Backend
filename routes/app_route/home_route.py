@@ -44,9 +44,17 @@ def operation_route():
             }
 
             inserted_id = User_Location.insert_user_location(user_data)
+            response = {
+            "success":True,
+            "data": [{
+                
+                    "result":"SUCCESS_INSERT"
+                
+            }]}
+        
             return (
                 jsonify(
-                    {"message": "user location added successfully", "id": inserted_id}
+                    response
                 ),
                 201,
             )
@@ -83,7 +91,13 @@ def operation_route():
             if action == "INSERT"
             else "Event removed from favourites"
         )
-        return jsonify({"message": message}), 200
+        response = {
+            "success":True,
+            "data": [
+                {"result":message}
+            ]
+        }
+        return jsonify(response), 200
 
     elif data["StoredProcedureName"] == "PlaceViewModifications":
 
@@ -116,7 +130,50 @@ def operation_route():
             if action == "INSERT"
             else "Place removed from favourites"
         )
-        return jsonify({"message": message}), 200
+        response = {
+            "success":True,
+            "data": [
+                {"result":message}
+            ]
+        }
+        return jsonify(response), 200
+    
+    
+    elif data["StoredProcedureName"] == "UpdateCommentsLike":
+        activity_id = data.get("Params1")
+        per2 = data.get("Params2")
+
+        if not activity_id:
+            return jsonify({"error": "ActivityId is required"}), 400
+
+        # Find the activity
+        activity = ACTIVITY_COLLECTION.find_one({"ActivityId": activity_id})
+
+        if not activity:
+            return jsonify({"error": "Activity not found"}), 404
+
+        # Increase LikeCount by 1 (default to 0 if it doesn't exist)
+        if per2=="Like":
+            new_like_count = (activity.get("LikeCount") or 0) + 1
+            message="like increased by 1"
+        else:
+            new_like_count = max((activity.get("LikeCount") or 1) - 1, 0)
+            message="like decreased by 1"
+
+        # Update in the database
+        ACTIVITY_COLLECTION.update_one(
+            {"ActivityId": activity_id},
+            {"$set": {"LikeCount": new_like_count}}
+        )
+
+        response = {
+            "success":True,
+            "data": [
+                {"result":message}
+            ]
+        }
+        return jsonify(response), 200
+    
 
 
 @home_bp.route("/RequestForJson", methods=["POST"])

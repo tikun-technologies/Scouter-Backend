@@ -2,7 +2,7 @@ import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity
 from models.place_model import Place
-from utils.helper import apply_filters, protected, upload_multiple_files
+from utils.helper import apply_filters, haversine_distance, protected, upload_multiple_files
 
 
 place_bp = Blueprint("place", __name__)
@@ -18,9 +18,26 @@ def get_places():
         filters = apply_filters({}, data)
         page = int(data.get("page", 1))
         page_size = int(data.get("pageSize", 10))
-
+        include_distance = data.get("IncludeCalculateDistance", False)
         result = Place.get_places(filters, page, page_size)
+        
+        if include_distance:
+            user_lat = data.get("Latitude")
+            user_lon = data.get("Longitude")
+            
+            if user_lat is None or user_lon is None:
+                return jsonify({"error": "Latitude and Longitude are required for distance calculation"}), 400
+
+            # Calculate distance for each place
+            for place in result["data"]:
+                place_lat = place.get("Latitude")
+                place_lon = place.get("Longitude")
+
+                if place_lat is not None and place_lon is not None:
+                    place["Distance"] = round(haversine_distance(user_lat, user_lon, place_lat, place_lon), 2)  # Distance in meters
+            result["data"].sort(key=lambda x: x.get("Distance", float('inf')))
         return jsonify(result), 200
+       
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

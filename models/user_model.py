@@ -82,7 +82,7 @@ class User:
         """Updates an existing user document."""
         result = USER_COLLECTION.update_one({"UserId": user_id}, {"$set": update_data})
         print(result)
-        return result.modified_count > 0
+        return True
 
     @staticmethod
     def delete_user( user_id):
