@@ -34,7 +34,7 @@ def get_places():
                 place_lon = place.get("Longitude")
 
                 if place_lat is not None and place_lon is not None:
-                    place["Distance"] = round(haversine_distance(user_lat, user_lon, place_lat, place_lon), 2)  # Distance in meters
+                    place["Distance_km"], place["Distance_mil"] = haversine_distance(user_lat, user_lon, place_lat, place_lon)  # Distance in meters
             result["data"].sort(key=lambda x: x.get("Distance", float('inf')))
         return jsonify(result), 200
        
