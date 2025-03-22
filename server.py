@@ -2,6 +2,12 @@ from flask import Flask
 from utils.helper import jwt
 app = Flask(__name__)
 
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Load Firebase credentials (Replace with the correct path to your JSON file)
+cred = credentials.Certificate("config/firebase.json")
+firebase_admin.initialize_app(cred)
 
 app.secret_key = 'Dheeraj@2006'
 

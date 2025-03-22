@@ -1,5 +1,6 @@
 from pymongo import MongoClient,GEOSPHERE
-uri = "mongodb+srv://dlovej009:Dheeraj2006@cluster0.dnu8vna.mongodb.net/?retryWrites=true&w=majority"
+
+uri = "mongodb+srv://dlovej009:Dheeraj2006@scouterdb.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000"
 client = MongoClient(uri)
 db = client['Scouter']
 USER_COLLECTION = db['USER']

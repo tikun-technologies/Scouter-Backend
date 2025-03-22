@@ -7,6 +7,7 @@ from functools import wraps
 from flask_jwt_extended import JWTManager
 from azure.storage.blob import BlobServiceClient
 import requests
+from config.db_config import USER_COLLECTION,ACTIVITY_COLLECTION
 
 jwt = JWTManager() 
 def apply_filters(filters, filter_data):
@@ -14,6 +15,7 @@ def apply_filters(filters, filter_data):
     mongo_query = {}
 
     if filter_data.get("filterInfo"):
+        print("in filterrrrererr")
         for filter_item in filter_data.get("filterInfo"):
             field = filter_item["filterBy"]
             value = filter_item["filterTerm"]
@@ -43,7 +45,7 @@ def apply_filters(filters, filter_data):
         }
 
         
-
+    print(mongo_query)
     return mongo_query
 
 def paginate_query(collection, filters, page, page_size):
@@ -149,6 +151,7 @@ def format_event(event, favourite_event_ids):
         "hashTag": f"{event.get('Hashtag1', '')} {event.get('Hashtag2', '')} {event.get('Hashtag3', '')} {event.get('Hashtag4', '')} {event.get('Hashtag5', '')}".strip(),
         "favCount": event.get("LikeCount", 0),
         "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
+        # "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
         "timeLapse": "D"  # Static value, modify logic if required
     }
     
@@ -165,4 +168,121 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    return R * c 
+    distance_meters = R * c  # Distance in meters
+    distance_km = distance_meters / 1000  # Convert to kilometers
+    distance_miles = distance_km * 0.621371  # Convert to miles
+
+    return round(distance_km, 2), round(distance_miles, 2)
+
+
+
+
+# def transform_activity(activity):
+    
+#     user=USER_COLLECTION.find_one({"UserId":activity["CreatedBy"]},{"password":0})
+    
+    
+#     return {
+#         "Distance": activity.get("Distance", None),  # Add logic to calculate if needed
+#         "Latitude": activity.get("Latitude"),
+#         "Longitude": activity.get("Longitude"),
+#         "timestamp": activity.get("CreatedDate"),
+#         "type": activity.get("ActivityType"),
+#         "id": activity.get("ActivityId"),
+#         "cityId": activity.get("CityId"),
+#         "placeId": activity.get("PlaceId"),
+#         "placename": activity.get("Title"),
+#         "userId": activity.get("CreatedBy"),
+#         "comment_text": activity.get("Description"),
+#         "comment_likecount": activity.get("LikeCount"),
+#         "comment_dislikecount": activity.get("DisLikeCount"),
+#         "inLocation": activity.get("InLocation", False),
+#         "favorites": True if activity.get("CreatedBy") in activity.get("LikedUsers") else False,  # Default value, can be fetched from user favorites list
+#         "comment_likes": activity.get("IsLiked", False),
+#         "comment_dislikes": False,  # Not available in schema, can be inferred if needed
+#         "imageUrl": activity.get("AttachmentUrl"),  # Assuming images are in this field
+#         "video_thumbnailurl": activity.get("ThumbnailUrl"),
+#         "video_videourl": activity.get("AttachmentUrl") if activity.get("ActivityType")=="Video" else None,  # Assuming no direct video field
+#         "viewcount": activity.get("ViewCount"),
+#         "videos_likecount": None,  # Adjust if video-like count exists
+#         "videos_dislikecount": None,  # Adjust if video-dislike count exists
+#         "uploader_userinfo": user,
+#         "subcomments": None,  # Assuming no subcomments in schema
+#         "emojiCount": [
+#             {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F4E8_color.png", "count": 0},
+#             {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F48A_color.png", "count": 0},
+#             {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F351_color.png", "count": 0},
+#         ],
+#     }
+
+
+def get_activities(place_id, page=1, page_size=10):
+    # Pagination logic
+    skip = (page - 1) * page_size
+    limit = page_size
+
+    # MongoDB aggregation pipeline for optimized query
+    pipeline = [
+        {"$match": {"PlaceId": place_id}},
+        {"$sort": {"CreatedDate": -1}},  # Sort by latest activity
+        {"$skip": skip},
+        {"$limit": limit},
+        {
+            "$lookup": {
+                "from": "User",
+                "localField": "CreatedBy",
+                "foreignField": "UserId",
+                "as": "uploader_userinfo",
+            }
+        },
+        {"$unwind": {"path": "$uploader_userinfo", "preserveNullAndEmptyArrays": True}},
+        {
+            "$project": {
+                "_id": 0,  # Exclude MongoDB ID
+                "Distance": 1,
+                "Latitude": 1,
+                "Longitude": 1,
+                "timestamp": "$CreatedDate",
+                "type": "$ActivityType",
+                "id": "$ActivityId",
+                "cityId": "$CityId",
+                "placeId": "$PlaceId",
+                "placename": "$Title",
+                "userId": "$CreatedBy",
+                "comment_text": "$Description",
+                "comment_likecount": "$LikeCount",
+                "inLocation": {"$ifNull": ["$InLocation", False]},
+                "favorites": {"$in": ["$CreatedBy", "$LikedUsers"]},
+                "comment_likes": {"$ifNull": ["$IsLiked", False]},
+                "imageUrl": "$AttachmentUrl",
+                "video_thumbnailurl": "$ThumbnailUrl",
+                "video_videourl": {
+                    "$cond": {"if": {"$eq": ["$ActivityType", "Video"]}, "then": "$AttachmentUrl", "else": None}
+                },
+                "viewcount": "$ViewCount",
+                "videos_likecount": None,
+                "videos_dislikecount": None,
+                "uploader_userinfo": {
+                    "UserId": "$uploader_userinfo.UserId",
+                    "UserName": "$uploader_userinfo.UserName",
+                    "ProfilePicture": "$uploader_userinfo.ProfilePicture",
+                },
+                "subcomments": None,
+                "emojiCount": [
+                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F4E8_color.png", "count": 0},
+                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F48A_color.png", "count": 0},
+                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F351_color.png", "count": 0},
+                ],
+            }
+        },
+    ]
+    total_count = ACTIVITY_COLLECTION.count_documents({"PlaceId": place_id})
+    activities = list(ACTIVITY_COLLECTION.aggregate(pipeline))
+    
+    return {
+            "success": True,
+            "data": activities,
+            "page": page,
+            "pageSize": page_size,
+            "total": total_count
+        }

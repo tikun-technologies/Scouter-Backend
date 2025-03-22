@@ -50,7 +50,12 @@ class ActivitySchema(Schema):
     Currency = fields.Str(allow_none=True)
     InstagramPk = fields.Str(allow_none=True)
     IsFlagged = fields.Bool(allow_none=True)
+    FlaggedUsers = fields.List(fields.Str(), allow_none=True)
     ViewCount = fields.Int(allow_none=True)
+    ViewedUsers = fields.List(fields.Str(), allow_none=True)
+    LikeCount = fields.Int(allow_none=True)
+    LikedUsers = fields.List(fields.Str(), allow_none=True)
+    IsLiked = fields.Bool( allow_none=True)
     InstaShortCode = fields.Str(allow_none=True)
     Region = fields.Str(allow_none=True)
     MigratedThumbnailUrl = fields.Str(allow_none=True)
@@ -69,6 +74,7 @@ class Activity:
         data = list(ACTIVITY_COLLECTION.find(filters).skip(skip).limit(page_size))
         total = ACTIVITY_COLLECTION.count_documents(filters)
         return {
+            "success": True,
             "data": data,
             "page": page,
             "pageSize": page_size,

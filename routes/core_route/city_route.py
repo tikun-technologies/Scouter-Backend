@@ -60,7 +60,7 @@ def update_city():
 # ✅ Delete a city
 @city_bp.route("/delete", methods=["POST"])
 @protected
-def delete_city(city_id):
+def delete_city():
     """Delete a city by CityId."""
     try:
         data = request.get_json()

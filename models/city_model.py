@@ -23,6 +23,7 @@ class CitySchema(Schema):
     cityCount = fields.Int(allow_none=True)
     IsScouter = fields.Bool()
     IsPopular = fields.Bool(allow_none=True)
+    PlaceCount=fields.Int(allow_none=True)
     
 
 
@@ -48,9 +49,12 @@ class City:
         """Inserts a new city document."""
         schema = CitySchema()
         errors = schema.validate(data)
+        
         if errors:
+            print(errors)
             return {"error": errors}
         result = CITY_COLLECTION.insert_one(data)
+   
         return str(result.inserted_id)
 
     @staticmethod
