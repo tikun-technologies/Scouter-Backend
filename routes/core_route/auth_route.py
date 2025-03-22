@@ -61,7 +61,7 @@ def get_auths():
             
         access_token = create_access_token(identity=user_data["UserId"], expires_delta=datetime.timedelta(days=30))  
         result={
-            "status":True,
+            "success":True,
             "data":{
             "User":user_data,
             "UserDevice":device_data,
