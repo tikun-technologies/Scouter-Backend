@@ -37,8 +37,10 @@ def get_auths():
             user_data_["UserId"]=user_id
             user_data_["DeviceId"]=device_id
             user_data_["favourite"]={"favouriteEvent":[],"favouritePlace":[]}
-            
-            user_data_["MigratedProfileImage"]=upload_to_azure(user_data_["MigratedProfileImage"],"image")
+            try: 
+                user_data_["MigratedProfileImage"]=upload_to_azure(user_data_["MigratedProfileImage"],"image")
+            except:
+                user_data_["MigratedProfileImage"]=""
             user_data=User.insert_user(user_data_)
             print(user_data)
             
