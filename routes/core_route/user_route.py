@@ -72,11 +72,11 @@ def update_user():
 # ✅ Delete a user
 @user_bp.route("/delete", methods=["POST"])
 @protected
-def delete_user(user_id):
+def delete_user():
     """Delete a user by UserId."""
     try:
         data = request.get_json()
-        user_id = data.get("UserId")
+        user_id = data.get("userId")
         deleted = User.delete_user(user_id)
         if deleted:
             return jsonify({"message": "user deleted successfully"}), 200

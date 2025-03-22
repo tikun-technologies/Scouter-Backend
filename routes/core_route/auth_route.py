@@ -67,7 +67,7 @@ def get_auths():
             "UserDevice":device_data,
             "UserId":user_data["UserId"],
             "IsNewUser":is_new_user,
-            "token":access_token
+            "Token":access_token
         }}    
             
 
