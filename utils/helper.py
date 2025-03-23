@@ -9,6 +9,14 @@ from azure.storage.blob import BlobServiceClient
 import requests
 from config.db_config import USER_COLLECTION,ACTIVITY_COLLECTION
 
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Load Firebase credentials (Replace with the correct path to your JSON file)
+cred = credentials.Certificate("config\\firebase.json")
+firebase_admin.initialize_app(cred)
+
+
 jwt = JWTManager() 
 def apply_filters(filters, filter_data):
     """Applies dynamic filters to a MongoDB query."""
@@ -139,20 +147,20 @@ def format_event(event, favourite_event_ids):
     print("ids :- ",favourite_event_ids)
     """Format event object and check if it's a user favorite."""
     return {
-        "eventId": event.get("ActivityId"),
-        "cityId": event.get("CityId"),
-        "placeId": event.get("PlaceId"),
-        "placeName": event.get("Title"),  # Assuming Title is place name
-        "eventTitle": event.get("Title"),
-        "eventDescription": event.get("Description"),
-        "eventImage": event.get("AttachmentUrl"),
-        "eventDate": event.get("ActivityDate"),
-        "eventViews": event.get("ViewCount", 0),
-        "hashTag": f"{event.get('Hashtag1', '')} {event.get('Hashtag2', '')} {event.get('Hashtag3', '')} {event.get('Hashtag4', '')} {event.get('Hashtag5', '')}".strip(),
-        "favCount": event.get("LikeCount", 0),
-        "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
+        "EventId": event.get("ActivityId"),
+        "CityId": event.get("CityId"),
+        "PlaceId": event.get("PlaceId"),
+        "PlaceName": event.get("Title"),  # Assuming Title is place name
+        "EventTitle": event.get("Title"),
+        "EventDescription": event.get("Description"),
+        "EventImage": event.get("AttachmentUrl"),
+        "EventDate": event.get("ActivityDate"),
+        "EventViews": event.get("ViewCount", 0),
+        "HashTag": f"{event.get('Hashtag1', '')} {event.get('Hashtag2', '')} {event.get('Hashtag3', '')} {event.get('Hashtag4', '')} {event.get('Hashtag5', '')}".strip(),
+        "FavCount": event.get("LikeCount", 0),
+        "IsUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
         # "isUserFavourite": event.get("ActivityId") in favourite_event_ids,  # Check if in user's favorite list
-        "timeLapse": "D"  # Static value, modify logic if required
+        "TimeLapse": "D"  # Static value, modify logic if required
     }
     
     
@@ -242,36 +250,36 @@ def get_activities(place_id, page=1, page_size=10):
                 "Distance": 1,
                 "Latitude": 1,
                 "Longitude": 1,
-                "timestamp": "$CreatedDate",
-                "type": "$ActivityType",
-                "id": "$ActivityId",
-                "cityId": "$CityId",
-                "placeId": "$PlaceId",
-                "placename": "$Title",
-                "userId": "$CreatedBy",
-                "comment_text": "$Description",
-                "comment_likecount": "$LikeCount",
-                "inLocation": {"$ifNull": ["$InLocation", False]},
-                "favorites": {"$in": ["$CreatedBy", "$LikedUsers"]},
-                "comment_likes": {"$ifNull": ["$IsLiked", False]},
-                "imageUrl": "$AttachmentUrl",
-                "video_thumbnailurl": "$ThumbnailUrl",
-                "video_videourl": {
+                "Timestamp": "$CreatedDate",
+                "Type": "$ActivityType",
+                "Id": "$ActivityId",
+                "CityId": "$CityId",
+                "PlaceId": "$PlaceId",
+                "Placename": "$Title",
+                "UserId": "$CreatedBy",
+                "Comment_text": "$Description",
+                "Comment_likecount": "$LikeCount",
+                "InLocation": {"$ifNull": ["$InLocation", False]},
+                "Favorites": {"$in": ["$CreatedBy", "$LikedUsers"]},
+                "Comment_likes": {"$ifNull": ["$IsLiked", False]},
+                "ImageUrl": "$AttachmentUrl",
+                "Video_thumbnailurl": "$ThumbnailUrl",
+                "Video_videourl": {
                     "$cond": {"if": {"$eq": ["$ActivityType", "Video"]}, "then": "$AttachmentUrl", "else": None}
                 },
-                "viewcount": "$ViewCount",
-                "videos_likecount": None,
-                "videos_dislikecount": None,
-                "uploader_userinfo": {
+                "Viewcount": "$ViewCount",
+                "Videos_likecount": None,
+                "Videos_dislikecount": None,
+                "Uploader_userinfo": {
                     "UserId": "$uploader_userinfo.UserId",
                     "UserName": "$uploader_userinfo.UserName",
                     "ProfilePicture": "$uploader_userinfo.ProfilePicture",
                 },
-                "subcomments": None,
-                "emojiCount": [
-                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F4E8_color.png", "count": 0},
-                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F48A_color.png", "count": 0},
-                    {"emojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F351_color.png", "count": 0},
+                "Subcomments": None,
+                "EmojiCount": [
+                    {"EmojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F4E8_color.png", "count": 0},
+                    {"EmojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F48A_color.png", "count": 0},
+                    {"EmojiUrl": "https://scouter-file2.s3.amazonaws.com/Emojis/1F351_color.png", "count": 0},
                 ],
             }
         },
@@ -286,3 +294,72 @@ def get_activities(place_id, page=1, page_size=10):
             "pageSize": page_size,
             "total": total_count
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def send_notifications_to_all(title, message,device_tokens, image_url=None, place_id=None):
+    """
+    Sends push notifications to all active users in batches of 450.
+    
+    :param title: Notification title
+    :param message: Notification message
+    :param image_url: Optional image URL for rich notifications
+    :param place_id: Optional custom data (e.g., Place ID)
+    :return: JSON response with success/failure count and batch results
+    """
+    try:
+        batch_size = 450  # ✅ Batch size set to 450 (below FCM limit of 500)
+        total_sent = 0
+        total_failed = 0
+        batch_results = []
+
+        # ✅ Send notifications in batches of 450
+        for i in range(0, len(device_tokens), batch_size):
+            batch_tokens = device_tokens[i:i + batch_size]
+            
+            message_data = messaging.MulticastMessage(
+                notification=messaging.Notification(
+                    title=title,
+                    body=message,
+                    image=image_url if image_url else None
+                ),
+                tokens=batch_tokens,
+                data={"PlaceId": place_id} if place_id else {},
+            )
+            print("after messaging ")
+            response = messaging.send_multicast(message_data)
+            total_sent += response.success_count
+            total_failed += response.failure_count
+            batch_results.append({
+                "batch_start": i + 1,
+                "batch_end": i + len(batch_tokens),
+                "success_count": response.success_count,
+                "failure_count": response.failure_count
+            })
+#         print({
+#             "TotalUsers": len(device_tokens),
+#             "TotalSent": total_sent,
+#             "TotalFailed": total_failed,
+#             "Batches": batch_results
+#         }
+# )
+        return {
+            "TotalUsers": len(device_tokens),
+            "TotalSent": total_sent,
+            "TotalFailed": total_failed,
+            "Batches": batch_results
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}

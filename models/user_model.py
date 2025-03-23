@@ -1,3 +1,4 @@
+from datetime import datetime
 from config.db_config import USER_COLLECTION
 from marshmallow import Schema,fields,validate
 
@@ -6,10 +7,10 @@ class userSchema(Schema):
   
     _id = fields.Str(required=True)  # _id will be the same as userId
     UserId = fields.Str(required=True)
-    # CreatedBy = fields.Str(required=True)
-    # ModifiedBy = fields.Str(required=True)
-    # CreatedDate = fields.DateTime(required=True)
-    # ModifiedDate = fields.DateTime(required=True)
+    CreatedBy = fields.Str(allow_none=True)
+    ModifiedBy = fields.Str(allow_none=True)
+    CreatedDate = fields.DateTime(default=datetime.utcnow)
+    ModifiedDate = fields.DateTime(default=datetime.utcnow)
     Name = fields.Str()
     ProfileImage = fields.Str(allow_none=True)
     Age = fields.Int(allow_none=True)

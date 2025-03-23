@@ -1,3 +1,4 @@
+from datetime import  datetime
 from config.db_config import ACTIVITY_COLLECTION
 from marshmallow import Schema,fields,validate
 
@@ -7,8 +8,8 @@ class ActivitySchema(Schema):
     ActivityId = fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
-    CreatedDate = fields.DateTime()
-    ModifiedDate = fields.DateTime()
+    CreatedDate = fields.DateTime(default=datetime.utcnow)
+    ModifiedDate = fields.DateTime(default=datetime.utcnow)
     ActivityType = fields.Str(required=True) 
     AttachmentType = fields.Str(allow_none=True)
     ActivityDate = fields.DateTime(allow_none=True)
