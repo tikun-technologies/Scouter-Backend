@@ -13,7 +13,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 # Load Firebase credentials (Replace with the correct path to your JSON file)
-cred = credentials.Certificate("config\\firebase.json")
+cred = credentials.Certificate("config/firebase.json")
 firebase_admin.initialize_app(cred)
 
 
