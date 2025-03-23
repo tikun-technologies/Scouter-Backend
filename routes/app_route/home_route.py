@@ -3,15 +3,17 @@ import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity
 from models.user_location_model import User_Location
-from models.user_model import User
-from models.activity_model import Activity
+from models.notification_model import Notification
 from config.db_config import (
     PLACE_COLLECTION,
     ACTIVITY_COLLECTION,
     USER_COLLECTION,
+    USER_DEVICE_COLLECTION,
+    USER_LOCATION_COLLECTION,
     CITY_COLLECTION,
+    NOTIFICATION_COLLECTION,
 )
-from utils.helper import apply_filters, find_closest_place, format_event, get_activities, haversine_distance, protected
+from utils.helper import apply_filters, find_closest_place, format_event, get_activities, haversine_distance, protected, send_notifications_to_all, upload_to_azure
 
 
 home_bp = Blueprint("home", __name__)
@@ -292,6 +294,7 @@ def UserLocation_Insert():
             "UserLocationId": data.get("userId", ""),
             "_id": _id,
             "CreatedBy": get_jwt_identity(),
+
         }
 
         inserted_id = User_Location.insert_user_location(user_data)
@@ -649,3 +652,4 @@ def get_map_place_info():
             }},
         }
         return jsonify( response), 200
+ 

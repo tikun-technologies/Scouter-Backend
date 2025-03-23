@@ -1,3 +1,4 @@
+from datetime import datetime
 from config.db_config import CITY_COLLECTION
 from marshmallow import Schema,fields,validate
 
@@ -8,8 +9,8 @@ class CitySchema(Schema):
     CityId = fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
-    CreatedDate = fields.DateTime()
-    ModifiedDate = fields.DateTime()
+    CreatedDate = fields.DateTime(default=datetime.utcnow)
+    ModifiedDate = fields.DateTime(default=datetime.utcnow)
     CityName = fields.Str(required=True)
     Country = fields.Str(required=True)
     PolyLatDiff = fields.Float(allow_none=True)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from config.db_config import PLACE_COLLECTION
 from marshmallow import Schema,fields,validate
 from pymongo import UpdateOne
@@ -7,8 +8,8 @@ class PlaceSchema(Schema):
     _id=fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
-    CreatedDate = fields.DateTime()
-    ModifiedDate = fields.DateTime()
+    CreatedDate = fields.DateTime(default=datetime.utcnow)
+    ModifiedDate = fields.DateTime(default=datetime.utcnow)
     PlaceId=fields.Str(required=True)
     CityId = fields.Str(required=True)
     PlaceName = fields.Str(required=True)

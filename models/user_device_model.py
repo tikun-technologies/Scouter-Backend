@@ -7,10 +7,10 @@ class User_Device_Schema(Schema):
   
     _id = fields.Str()  # _id will be the same as user_deviceId
     DeviceId = fields.Str(required=True)
-    # CreatedBy = fields.Str(required=True)
-    # ModifiedBy = fields.Str(required=True)
-    # CreatedDate = fields.DateTime(required=True)
-    # ModifiedDate = fields.DateTime(required=True)
+    CreatedBy = fields.Str(allow_none=True)
+    ModifiedBy = fields.Str(allow_none=True)
+    CreatedDate = fields.DateTime(default=datetime.utcnow)
+    ModifiedDate = fields.DateTime(default=datetime.utcnow)
     DeviceToken = fields.Str(allow_none=True)
     Language = fields.Str(allow_none=True)
     IsDeviceAllowed = fields.Bool(allow_none=True)
