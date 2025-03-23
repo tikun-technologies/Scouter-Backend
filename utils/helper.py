@@ -363,3 +363,40 @@ def send_notifications_to_all(title, message,device_tokens, image_url=None, plac
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
+    
+def send_push_notification_user(title, message,device_token, image_url=None, place_id=None):
+    """Send a push notification with custom data (Supports Android & iOS)"""
+    print("in messaging part ")
+    try:
+        message = messaging.Message(
+    
+            data={  # ✅ Custom Data Payload
+                "PlaceId": place_id,
+                # "ImageUrl":image_url,
+            },
+            token=device_token,
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        mutable_content=True,  # ✅ Enables rich notifications (image support in iOS)
+                        alert=messaging.ApsAlert(title=title, body=message)
+                    )
+                ),
+                fcm_options=messaging.APNSFCMOptions(
+                    image=image_url  # ✅ Image for iOS
+                )
+            )
+        )
+
+        response = messaging.send(message)
+        print(response)
+        return {
+                "TotalUsers": 1,
+                "TotalSent": 1,
+                "TotalFailed": 0,
+                "Batches": ""
+            }
+    except Exception as error :
+        print(error)
+        return {"error":error}

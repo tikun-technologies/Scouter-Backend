@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity
 from config.db_config import NOTIFICATION_COLLECTION, USER_DEVICE_COLLECTION, USER_LOCATION_COLLECTION
 from models.notification_model import Notification
-from utils.helper import apply_filters, protected, send_notifications_to_all, upload_to_azure
+from utils.helper import apply_filters, protected, send_notifications_to_all, send_push_notification_user, upload_to_azure
 
 
 notification_bp = Blueprint("notification", __name__)
@@ -90,12 +90,12 @@ def get_user_notifications_count():
     data = request.get_json()
     user_id=data.get("UserId")
     count=NOTIFICATION_COLLECTION.count_documents({"UserId":user_id})
-    return{
+    return jsonify({
         "success":True,
-        data:{
+        "data":{
             "Count":count
         }
-    }
+    })
     
     
 @notification_bp.route("/send-notification-user", methods=["POST"])
@@ -108,20 +108,23 @@ def send_user_notifications():
     place_id = data.get("PlaceId", None)  # Custom data
     user_id = data.get("UserId", None)  # Custom data
     # days=data.get("Days",None)
-
+    print(data)
     device = USER_DEVICE_COLLECTION.find_one(
     {"UserId": user_id},  # Filter by active user
     {"_id": 0, "DeviceToken": 1}  # Only return DeviceToken 
     )
-    print(device["DeviceToken"])
+    devic=device["DeviceToken"]
+    print(devic)
     try:
-        res=send_notifications_to_all(title,message,[device["DeviceToken"]],image_url,place_id)
+        
+        res=send_push_notification_user(title,message,devic,image_url,place_id)
+        print(res)
         _id=str(uuid.uuid4())
-        data["_id"]=_id,
+        data["_id"]=_id
         data["AppNotificationId"]=_id
         if image_url:
             data["ImageUrl"]=upload_to_azure(image_url,'image')
-            
+        print(data)
         notify=Notification.insert_user_notification(data)
         res["AppNotificationId"]=notify
         return{
@@ -129,10 +132,10 @@ def send_user_notifications():
         "data":res
         }
     except Exception as error:
-        return jsonify({
+        return {
         "success":False,
         "message":error
-        }),500
+        }
 
 
 
