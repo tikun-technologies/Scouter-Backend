@@ -58,16 +58,16 @@ class User_Device:
     @staticmethod
     def update_or_insert_user_device(user_device_id, update_data):
         """Updates an existing user_device document or inserts a new one if not found."""
-        schema = User_Device_Schema()
-        errors = schema.validate(update_data)
+        # schema = User_Device_Schema()
+        # errors = schema.validate(update_data)
 
-        if errors:
-            return {"error": errors}, 400
+        # if errors:
+        #     return {"error": errors}, 400
 
         # Ensure we track modification date
         # Use upsert=True to update if exists, insert if not
         result = USER_DEVICE_COLLECTION.update_one(
-            {"DeviceId": user_device_id},
+            {"UserId": user_device_id},
             {"$set": update_data},
             upsert=True
         )

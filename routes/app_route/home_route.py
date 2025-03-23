@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity
 from models.user_location_model import User_Location
 from models.notification_model import Notification
+from models.user_device_model import User_Device
 from config.db_config import (
     PLACE_COLLECTION,
     ACTIVITY_COLLECTION,
@@ -677,3 +678,19 @@ def get_map_place_info():
             },
         }
         return jsonify(response), 200
+
+
+
+
+
+@home_bp.route("/update-device-token", methods=["POST"])
+@protected
+def update_device_token():
+    data=request.get_json()
+    user_id=data.get("UserId",None)
+    data=User_Device.update_or_insert_user_device(user_id,data)
+    return jsonify({
+        "success":True,
+        "data":data,
+        "message":"Device updated successfully"
+    })
