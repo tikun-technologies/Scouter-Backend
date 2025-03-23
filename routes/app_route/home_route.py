@@ -688,9 +688,29 @@ def get_map_place_info():
 def update_device_token():
     data=request.get_json()
     user_id=data.get("UserId",None)
-    data=User_Device.update_or_insert_user_device(user_id,data)
+    # user_device=
+    
+    user_device = USER_DEVICE_COLLECTION.find_one({"UserId": user_id})
+    print(user_device)
+    if not user_device:
+        return jsonify({"success": False, "message": "Device not found"}), 404
+
+    # Prepare update data
+    update_data = {"DeviceToken": data.get("DeviceToken")}
+
+    # Update the device token
+    result = USER_DEVICE_COLLECTION.update_one(
+        {"UserId": user_id}, {"$set": update_data}
+    )
+
+    if result.matched_count > 0:
+        return jsonify({
+            "success": True,
+            "data": update_data,
+            "message": "Device updated successfully"
+        })
+    
     return jsonify({
-        "success":True,
-        "data":data,
-        "message":"Device updated successfully"
-    })
+        "success": False,
+        "message": "Failed to update device"
+    }), 500
