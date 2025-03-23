@@ -20,7 +20,9 @@ def get_places():
         page_size = int(data.get("pageSize", 10))
         include_distance = data.get("IncludeCalculateDistance", False)
         result = Place.get_places(filters, page, page_size)
-        
+        result["data"].sort(key=lambda x:x.get("CurrentPopularity", 0), reverse=True)
+        print( type(result["data"]))
+        print( result["data"])
         if include_distance:
             user_lat = data.get("Latitude")
             user_lon = data.get("Longitude")
@@ -35,7 +37,7 @@ def get_places():
 
                 if place_lat is not None and place_lon is not None:
                     place["Distance_km"], place["Distance_mil"] = haversine_distance(user_lat, user_lon, place_lat, place_lon)  # Distance in meters
-            result["data"].sort(key=lambda x: x.get("Distance", float('inf')))
+        
         return jsonify(result), 200
        
     except Exception as e:
