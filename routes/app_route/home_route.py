@@ -13,7 +13,16 @@ from config.db_config import (
     CITY_COLLECTION,
     NOTIFICATION_COLLECTION,
 )
-from utils.helper import apply_filters, find_closest_place, format_event, get_activities, haversine_distance, protected, send_notifications_to_all, upload_to_azure
+from utils.helper import (
+    apply_filters,
+    find_closest_place,
+    format_event,
+    get_activities,
+    haversine_distance,
+    protected,
+    send_notifications_to_all,
+    upload_to_azure,
+)
 
 
 home_bp = Blueprint("home", __name__)
@@ -294,7 +303,6 @@ def UserLocation_Insert():
             "UserLocationId": data.get("userId", ""),
             "_id": _id,
             "CreatedBy": get_jwt_identity(),
-
         }
 
         inserted_id = User_Location.insert_user_location(user_data)
@@ -528,7 +536,18 @@ def city_search():
     city_name = data.get("name", "")
 
     cities = list(
-        CITY_COLLECTION.find({"CityName": {"$regex": city_name, "$options": "i"}})
+        CITY_COLLECTION.find(
+            {"CityName": {"$regex": city_name, "$options": "i"}},
+            {
+                "IsScouter": 1,
+                "Abbreviation": 1,
+                "Longitude": 1,
+                "Latitude": 1,
+                "CityName": 1,
+                "CityId": 1,
+                "TimeZone": 1,
+            },
+        )
     )
 
     return jsonify({"success": True, "data": cities}), 200
@@ -552,19 +571,20 @@ def place_search():
 def get_map_places():
     data = request.get_json()
     city_id = data.get("cityId")
-    places =list( PLACE_COLLECTION.find(
-        {"CityId": city_id},
-        {
-            "_id":1,
-            "PlaceName": 1,
-            "Latitude": 1,
-            "Longitude": 1,
-            "CurrentPopularity": 1,
-            "Address": 1,
-        },
-    ))
+    places = list(
+        PLACE_COLLECTION.find(
+            {"CityId": city_id},
+            {
+                "_id": 1,
+                "PlaceName": 1,
+                "Latitude": 1,
+                "Longitude": 1,
+                "CurrentPopularity": 1,
+                "Address": 1,
+            },
+        )
+    )
     return jsonify({"success": True, "data": places}), 200
-
 
 
 @home_bp.route("/map-place-info", methods=["POST"])
@@ -572,23 +592,23 @@ def get_map_places():
 def get_map_place_info():
     data = request.get_json()
     place_Id = data.get("placeId")
-    latitude=data.get("latitude")
-    longitude=data.get("longitude")
-    get=data.get("get")
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    get = data.get("get")
     page = int(data.get("page", 1))
     page_size = int(data.get("pageSize", 10))
-    place=PLACE_COLLECTION.find_one({"PlaceId":place_Id})
+    place = PLACE_COLLECTION.find_one({"PlaceId": place_Id})
     place["Distance_km"], place["Distance_mil"] = haversine_distance(
-    latitude, longitude, place["Latitude"], place["Longitude"]
-)
-    if get=="posts":
-        posts = get_activities(place_Id,page,page_size)
+        latitude, longitude, place["Latitude"], place["Longitude"]
+    )
+    if get == "posts":
+        posts = get_activities(place_Id, page, page_size)
         # posts["data"] = list(map(transform_activity, posts["data"]))
-        posts["place"]=place
-            
+        posts["place"] = place
+
         return jsonify(posts), 200
-    elif get=="events":
-        
+    elif get == "events":
+
         data = request.get_json()
 
         now = datetime.utcnow()
@@ -598,11 +618,15 @@ def get_map_place_info():
         start_of_week = start_of_today - timedelta(
             days=start_of_today.weekday()
         )  # Monday start
-        end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
+        end_of_week = start_of_week + timedelta(
+            days=6, hours=23, minutes=59, seconds=59
+        )
 
         # Fetch all events
         user_id = data.get("userId", "")
-        user = USER_COLLECTION.find_one({"_id": user_id}, {"favourite.favouriteEvent": 1})
+        user = USER_COLLECTION.find_one(
+            {"_id": user_id}, {"favourite.favouriteEvent": 1}
+        )
         print("user : ", user)
         events = list(
             ACTIVITY_COLLECTION.find(
@@ -643,13 +667,13 @@ def get_map_place_info():
             # Response formatting
         response = {
             "success": True,
-            "place":place,
+            "place": place,
             "data": {
-                "events":{
-                "tonight": tonight_events,
-                "thisWeek": this_week_events,
-                "upcoming": upcoming_events,
-            }},
+                "events": {
+                    "tonight": tonight_events,
+                    "thisWeek": this_week_events,
+                    "upcoming": upcoming_events,
+                }
+            },
         }
-        return jsonify( response), 200
- 
+        return jsonify(response), 200
