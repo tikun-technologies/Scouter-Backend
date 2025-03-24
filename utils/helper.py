@@ -309,7 +309,7 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
     # Match conditions (case-insensitive)
     match_query = {
         f"{'PlaceId' if activity_type == 'place' else 'CityId'}": place_id,
-        "ActivityType": {"$regex": "^(video|place)$", "$options": "i"}
+        "ActivityType": {"$regex": "video|image", "$options": "i"}
     }
 
     pipeline = [
@@ -342,8 +342,8 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
                 "_id": 0,
                 "Distance_km": None,  # Placeholder for calculated distance
                 "Distance_miles": None,
-                "Latitude": 1,
-                "Longitude": 1,
+                "Latitude": "$place_info.Latitude",
+                "Longitude": "$place_info.Longitude",
                 "Timestamp": "$CreatedDate",
                 "Type": "$ActivityType",
                 "Id": "$ActivityId",
@@ -379,6 +379,7 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
     if latitude is not None and longitude is not None:
         for activity in activities:
             if "Latitude" in activity and "Longitude" in activity:
+                print(activity)
                 distance_km, distance_miles = haversine_distance(latitude, longitude, activity["Latitude"], activity["Longitude"])
                 activity["Distance_km"] = distance_km
                 activity["Distance_miles"] = distance_miles
