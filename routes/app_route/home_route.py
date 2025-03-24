@@ -19,6 +19,7 @@ from utils.helper import (
     find_closest_place,
     format_event,
     get_activities,
+    get_activities_home_page,
     haversine_distance,
     protected,
     send_notifications_to_all,
@@ -603,7 +604,7 @@ def get_map_place_info():
         latitude, longitude, place["Latitude"], place["Longitude"]
     )
     if get == "posts":
-        posts = get_activities(place_Id, page, page_size)
+        posts = get_activities("place",place_Id, page, page_size)
         # posts["data"] = list(map(transform_activity, posts["data"]))
         posts["place"] = place
 
@@ -714,3 +715,22 @@ def update_device_token():
         "success": False,
         "message": "Failed to update device"
     }), 500
+    
+    
+    
+
+
+@home_bp.route("/activities", methods=["POST"])
+@protected
+def get_activities_for_city():
+    data = request.get_json()
+    city_id = data.get("cityId")
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    page = int(data.get("page", 1))
+    page_size = int(data.get("pageSize", 10))
+
+    posts = get_activities_home_page("city",city_id, latitude,longitude, page, page_size)
+    # posts["data"] = list(map(transform_activity, posts["data"]))
+    return jsonify(posts), 200
+    

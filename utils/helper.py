@@ -146,6 +146,7 @@ def find_closest_place(collection, lat, lon, max_distance=30):
 def format_event(event, favourite_event_ids):
     print("ids :- ",favourite_event_ids)
     """Format event object and check if it's a user favorite."""
+    print(event)
     return {
         "EventId": event.get("ActivityId"),
         "CityId": event.get("CityId"),
@@ -154,7 +155,7 @@ def format_event(event, favourite_event_ids):
         "EventTitle": event.get("Title"),
         "EventDescription": event.get("Description"),
         "EventImage": event.get("AttachmentUrl"),
-        "EventDate": event.get("ActivityDate"),
+        "EventDate": event.get("StartTime"),
         "EventViews": event.get("ViewCount", 0),
         "HashTag": f"{event.get('Hashtag1', '')} {event.get('Hashtag2', '')} {event.get('Hashtag3', '')} {event.get('Hashtag4', '')} {event.get('Hashtag5', '')}".strip(),
         "FavCount": event.get("LikeCount", 0),
@@ -224,14 +225,17 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 #     }
 
 
-def get_activities(place_id, page=1, page_size=10):
+def get_activities(type,place_id, page=1, page_size=10):
     # Pagination logic
     skip = (page - 1) * page_size
     limit = page_size
-
+    if type=="place":
+        mm={"PlaceId": place_id,"ActivityType": {"$regex": "^(video|place)$", "$options": "i"}}
+    elif type=="city":
+        mm={"CityId": place_id,"ActivityType": {"$regex": "^(video|place)$", "$options": "i"}}
     # MongoDB aggregation pipeline for optimized query
     pipeline = [
-        {"$match": {"PlaceId": place_id}},
+        {"$match":mm },
         {"$sort": {"CreatedDate": -1}},  # Sort by latest activity
         {"$skip": skip},
         {"$limit": limit},
@@ -284,7 +288,7 @@ def get_activities(place_id, page=1, page_size=10):
             }
         },
     ]
-    total_count = ACTIVITY_COLLECTION.count_documents({"PlaceId": place_id})
+    total_count = ACTIVITY_COLLECTION.count_documents(mm)
     activities = list(ACTIVITY_COLLECTION.aggregate(pipeline))
     
     return {
@@ -297,7 +301,95 @@ def get_activities(place_id, page=1, page_size=10):
 
 
 
+def get_activities_home_page(activity_type, place_id, latitude=None, longitude=None, page=1, page_size=10):
+    """Fetches activities with place details and calculates distance from given lat/lon."""
+    skip = (page - 1) * page_size
+    limit = page_size
 
+    # Match conditions (case-insensitive)
+    match_query = {
+        f"{'PlaceId' if activity_type == 'place' else 'CityId'}": place_id,
+        "ActivityType": {"$regex": "^(video|place)$", "$options": "i"}
+    }
+
+    pipeline = [
+        {"$match": match_query},
+        {"$sort": {"CreatedDate": -1}},
+        {"$skip": skip},
+        {"$limit": limit},
+        # Fetch user details
+        {
+            "$lookup": {
+                "from": "User",
+                "localField": "CreatedBy",
+                "foreignField": "UserId",
+                "as": "uploader_userinfo",
+            }
+        },
+        {"$unwind": {"path": "$uploader_userinfo", "preserveNullAndEmptyArrays": True}},
+        # Fetch place details
+        {
+            "$lookup": {
+                "from": "PLACES",
+                "localField": "PlaceId",
+                "foreignField": "PlaceId",
+                "as": "place_info",
+            }
+        },
+        {"$unwind": {"path": "$place_info", "preserveNullAndEmptyArrays": True}},
+        {
+            "$project": {
+                "_id": 0,
+                "Distance_km": None,  # Placeholder for calculated distance
+                "Distance_miles": None,
+                "Latitude": 1,
+                "Longitude": 1,
+                "Timestamp": "$CreatedDate",
+                "Type": "$ActivityType",
+                "Id": "$ActivityId",
+                "CityId": "$CityId",
+                "PlaceId": "$PlaceId",
+                "Placename": "$place_info.PlaceName",  # Fetch place name from PLACES collection
+                "PlaceAddress": "$place_info.Address",
+                "UserId": "$CreatedBy",
+                "Comment_text": "$Description",
+                "Comment_likecount": "$LikeCount",
+                "InLocation": {"$ifNull": ["$InLocation", False]},
+                "Favorites": {"$in": ["$CreatedBy", "$LikedUsers"]},
+                "Comment_likes": {"$ifNull": ["$IsLiked", False]},
+                "ImageUrl": "$AttachmentUrl",
+                "Video_thumbnailurl": "$ThumbnailUrl",
+                "Video_videourl": {
+                    "$cond": {"if": {"$eq": ["$ActivityType", "Video"]}, "then": "$AttachmentUrl", "else": None}
+                },
+                "Viewcount": "$ViewCount",
+                "Uploader_userinfo": {
+                    "UserId": "$uploader_userinfo.UserId",
+                    "UserName": "$uploader_userinfo.UserName",
+                    "ProfilePicture": "$uploader_userinfo.ProfilePicture",
+                },
+            }
+        },
+    ]
+
+    total_count = ACTIVITY_COLLECTION.count_documents(match_query)
+    activities = list(ACTIVITY_COLLECTION.aggregate(pipeline))
+
+    # If latitude and longitude are provided, calculate distance
+    if latitude is not None and longitude is not None:
+        for activity in activities:
+            if "Latitude" in activity and "Longitude" in activity:
+                distance_km, distance_miles = haversine_distance(latitude, longitude, activity["Latitude"], activity["Longitude"])
+                activity["Distance_km"] = distance_km
+                activity["Distance_miles"] = distance_miles
+
+    return {
+        "success": True,
+        "data": activities,
+        "page": page,
+        "pageSize": page_size,
+        "total": total_count
+    }
 
 
 
