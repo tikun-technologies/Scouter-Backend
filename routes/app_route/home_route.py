@@ -604,7 +604,7 @@ def get_map_place_info():
         latitude, longitude, place["Latitude"], place["Longitude"]
     )
     if get == "posts":
-        posts = get_activities("place",place_Id, page, page_size)
+        posts = get_activities_home_page("place",place_Id, page, page_size)
         # posts["data"] = list(map(transform_activity, posts["data"]))
         posts["place"] = place
 
