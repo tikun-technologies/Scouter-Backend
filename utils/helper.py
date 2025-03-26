@@ -354,8 +354,8 @@ def get_activities_home_page(activity_type, place_id, userId,latitude=None, long
                 "Comment_text": "$Description",
                 "Comment_likecount": "$LikeCount",
                 "InLocation": {"$ifNull": ["$InLocation", False]},
-                "Favorites": {"$in": [userId, "$LikedUsers"]},
-                "Comment_likes": {"$ifNull": ["$IsLiked", False]},
+                "Favorites": {"$in": [userId, "$uploader_userinfo.favourite"]},
+                "Comment_likes": {"$in": [userId, "$LikedUsers"]},
                 "ImageUrl": "$AttachmentUrl",
                 "Video_thumbnailurl": "$ThumbnailUrl",
                 "Video_videourl": {
