@@ -444,9 +444,12 @@ def update_activity():
 @home_bp.route("/user-favourite-screen", methods=["POST"])
 @protected
 def user_favourite_screen():
+    print("hii")
     data = request.get_json()
+    print(data)
     user_id = data.get("userId", "")
     user = USER_COLLECTION.find_one({"_id": user_id}, {"favourite": 1})
+    print(user)
     if not user:
         return jsonify({"message": "User not found or no favorites"}), 404
 
@@ -455,10 +458,24 @@ def user_favourite_screen():
     favourite_place_ids = user["favourite"].get("favouritePlace", [])
 
     # Fetch full event details
-    favourite_events = list(
-        ACTIVITY_COLLECTION.find({"ActivityId": {"$in": favourite_event_ids}})
-    )
+    favourite_event = list(
+    ACTIVITY_COLLECTION.aggregate([
+        {"$match": {"ActivityId": {"$in": favourite_event_ids}}},  # Match activities by ID
+        {
+            "$lookup": {
+                "from": "PLACES",
+                "localField": "PlaceId",
+                "foreignField": "PlaceId",
+                "as": "place_info",
+            }
+        },
+        {"$unwind": {"path": "$place_info", "preserveNullAndEmptyArrays": True}},
+    ])
 
+)
+
+    print(favourite_event)
+    favourite_events=[format_event(event,favourite_event_ids) for event in favourite_event]
     # Fetch full place details
     favourite_places = list(
         PLACE_COLLECTION.find({"PlaceId": {"$in": favourite_place_ids}})

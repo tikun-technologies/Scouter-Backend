@@ -151,7 +151,7 @@ def format_event(event, favourite_event_ids):
         "EventId": event.get("ActivityId"),
         "CityId": event.get("CityId"),
         "PlaceId": event.get("PlaceId"),
-        "PlaceName": event.get("Title"),  # Assuming Title is place name
+        "PlaceName":  event.get("place_info", {}).get("PlaceName"),  # Assuming Title is place name
         "EventTitle": event.get("Title"),
         "EventDescription": event.get("Description"),
         "EventImage": event.get("AttachmentUrl"),
