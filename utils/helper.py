@@ -301,7 +301,7 @@ def get_activities(type,place_id, page=1, page_size=10):
 
 
 
-def get_activities_home_page(activity_type, place_id, latitude=None, longitude=None, page=1, page_size=10):
+def get_activities_home_page(activity_type, place_id, userId,latitude=None, longitude=None, page=1, page_size=10):
     """Fetches activities with place details and calculates distance from given lat/lon."""
     skip = (page - 1) * page_size
     limit = page_size
@@ -311,7 +311,6 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
         f"{'PlaceId' if activity_type == 'place' else 'CityId'}": place_id,
         "ActivityType": {"$regex": "video|image", "$options": "i"}
     }
-
     pipeline = [
         {"$match": match_query},
         {"$sort": {"CreatedDate": -1}},
@@ -320,9 +319,9 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
         # Fetch user details
         {
             "$lookup": {
-                "from": "User",
+                "from": "USER",
                 "localField": "CreatedBy",
-                "foreignField": "UserId",
+                "foreignField": "_id",
                 "as": "uploader_userinfo",
             }
         },
@@ -355,7 +354,7 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
                 "Comment_text": "$Description",
                 "Comment_likecount": "$LikeCount",
                 "InLocation": {"$ifNull": ["$InLocation", False]},
-                "Favorites": {"$in": ["$CreatedBy", "$LikedUsers"]},
+                "Favorites": {"$in": [userId, "$LikedUsers"]},
                 "Comment_likes": {"$ifNull": ["$IsLiked", False]},
                 "ImageUrl": "$AttachmentUrl",
                 "Video_thumbnailurl": "$ThumbnailUrl",
@@ -365,16 +364,17 @@ def get_activities_home_page(activity_type, place_id, latitude=None, longitude=N
                 "Viewcount": "$ViewCount",
                 "Uploader_userinfo": {
                     "UserId": "$uploader_userinfo.UserId",
-                    "UserName": "$uploader_userinfo.UserName",
-                    "ProfilePicture": "$uploader_userinfo.ProfilePicture",
+                    "UserName": "$uploader_userinfo.Name",
+                    "ProfilePicture": "$uploader_userinfo.ProfileImage",
                 },
             }
         },
     ]
 
     total_count = ACTIVITY_COLLECTION.count_documents(match_query)
-    activities = list(ACTIVITY_COLLECTION.aggregate(pipeline))
 
+    activities = list(ACTIVITY_COLLECTION.aggregate(pipeline))
+    print(activities)
     # If latitude and longitude are provided, calculate distance
     if latitude is not None and longitude is not None:
         for activity in activities:

@@ -101,7 +101,7 @@ def update_place():
 
 
 # ✅ Update current popularity Multiple
-@place_bp.route("/update", methods=["POST"])
+@place_bp.route("/update-many", methods=["POST"])
 @protected
 def update_current_popularity():
     """Update an existing place by PlaceId."""

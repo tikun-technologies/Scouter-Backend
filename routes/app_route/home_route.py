@@ -725,12 +725,13 @@ def update_device_token():
 def get_activities_for_city():
     data = request.get_json()
     city_id = data.get("cityId")
+    user_id = data.get("userId")
     latitude = data.get("latitude")
     longitude = data.get("longitude")
     page = int(data.get("page", 1))
     page_size = int(data.get("pageSize", 10))
 
-    posts = get_activities_home_page("city",city_id, latitude,longitude, page, page_size)
+    posts = get_activities_home_page("city",city_id, user_id,latitude,longitude, page, page_size)
     # posts["data"] = list(map(transform_activity, posts["data"]))
     return jsonify(posts), 200
     
