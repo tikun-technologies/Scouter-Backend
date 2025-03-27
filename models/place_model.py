@@ -89,7 +89,7 @@ class Place:
         """Fetches places with applied filters and pagination."""
         user=USER_COLLECTION.find_one({"UserId":user_id})
         print(user)
-        print(user["favourite"]["favouritePlace"])
+        # print(user["favourite"]["favouritePlace"])
         skip = (page - 1) * page_size
         pipeline = [
             {"$match": filters},  # Apply filters

@@ -53,7 +53,7 @@ def apply_filters(filters, filter_data):
         }
 
         
-    print(mongo_query)
+    # print(mongo_query)
     return mongo_query
 
 def paginate_query(collection, filters, page, page_size):

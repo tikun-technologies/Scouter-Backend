@@ -15,11 +15,12 @@ def get_places():
     """Fetch places using filters and pagination."""
     try:
         data = request.get_json()
+        print(data)
         filters = apply_filters({}, data)
         page = int(data.get("page", 1))
         page_size = int(data.get("pageSize", 10))
         include_distance = data.get("IncludeCalculateDistance", False)
-        user_id = data.get("UserId", False)
+        user_id = data.get("userId", False)
         result = Place.get_places(filters,user_id, page, page_size)
         result["data"].sort(key=lambda x:x.get("CurrentPopularity", 0), reverse=True)
         # print( type(result["data"]))
