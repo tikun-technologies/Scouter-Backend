@@ -49,10 +49,11 @@ class User_Device:
     def insert_user_device( data):
         """Inserts a new user_device document."""
         schema = User_Device_Schema()
+        main_data=schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = USER_DEVICE_COLLECTION.insert_one(data)
+        result = USER_DEVICE_COLLECTION.insert_one(main_data)
         return str(result.inserted_id)
 
     @staticmethod

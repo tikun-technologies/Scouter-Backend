@@ -6,8 +6,8 @@ class NotificationSchema(Schema):
     AppNotificationId = fields.Str(required=True)  # Unique ID for the notification
     CreatedBy = fields.Str(allow_none=True)  
     ModifiedBy = fields.Str(allow_none=True)
-    CreatedDate = fields.DateTime(default=datetime.utcnow)
-    ModifiedDate = fields.DateTime(default=datetime.utcnow)
+    CreatedDate = fields.DateTime(missing=lambda: datetime.utcnow())
+    ModifiedDate = fields.DateTime(missing=lambda: datetime.utcnow())
     IsRead = fields.Bool(default=False)
     UserId = fields.Str(allow_none=True)
     RepliedUserId = fields.Str(allow_none=True)
@@ -50,34 +50,37 @@ class Notification:
     def insert_user_notification( data):
         """Inserts a new user_device document."""
         schema = NotificationSchema()
+        main_data=schema.load(data)
+        print(main_data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = NOTIFICATION_COLLECTION.insert_one(data)
+        result = NOTIFICATION_COLLECTION.insert_one(main_data)
         return str(result.inserted_id)
 
     @staticmethod
     def update_or_insert_user_notification(AppNotificationId, update_data):
-        """Updates an existing user_device document or inserts a new one if not found."""
+        """Updates an existing user notification or inserts a new one if not found."""
+
         schema = NotificationSchema()
-        errors = schema.validate(update_data)
 
-        if errors:
-            return {"error": errors}, 400
+        # ✅ Validate and deserialize data before updating
+        # errors = schema.validate(update_data)
+        # if errors:
+        #     print(errors)
+        #     return {"error": errors}, 400
 
-        # Ensure we track modification date
-        # Use upsert=True to update if exists, insert if not
+       
         result = NOTIFICATION_COLLECTION.update_one(
-            {"AppNotificationId": AppNotificationId},
-            {"$set": update_data},
-            upsert=True
+            {"AppNotificationId": AppNotificationId},  # Filter
+            {"$set": update_data},  # Update fields
         )
-        update_data["AppNotificationId"]=AppNotificationId
-        if result.matched_count > 0:
-            return update_data
-        else:
-            return update_data
-
+        print(AppNotificationId)
+        print(result)
+        # ✅ Return updated document
+        update_data["AppNotificationId"] = AppNotificationId
+        return update_data
+    
     @staticmethod
     def delete_user_notification( user_device_id):
         """Deletes a user_device document."""

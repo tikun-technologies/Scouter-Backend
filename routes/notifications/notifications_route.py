@@ -113,6 +113,7 @@ def send_user_notifications():
     {"UserId": user_id},  # Filter by active user
     {"_id": 0, "DeviceToken": 1}  # Only return DeviceToken 
     )
+    print(device)
     devic=device["DeviceToken"]
     print(devic)
     try:

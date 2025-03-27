@@ -8,8 +8,8 @@ class PlaceSchema(Schema):
     _id=fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
-    CreatedDate = fields.DateTime(default=datetime.utcnow)
-    ModifiedDate = fields.DateTime(default=datetime.utcnow)
+    CreatedDate = fields.DateTime(lambda: datetime.utcnow)
+    ModifiedDate = fields.DateTime(lambda: datetime.utcnow)
     PlaceId=fields.Str(required=True)
     CityId = fields.Str(required=True)
     PlaceName = fields.Str(required=True)
@@ -102,10 +102,11 @@ class Place:
     def insert_place( data):
         """Inserts a new place document."""
         schema = PlaceSchema()
+        main_data=schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = PLACE_COLLECTION.insert_one(data)
+        result = PLACE_COLLECTION.insert_one(main_data)
         return str(result.inserted_id)
 
     @staticmethod

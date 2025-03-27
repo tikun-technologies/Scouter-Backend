@@ -72,10 +72,11 @@ class User:
     def insert_user( data):
         """Inserts a new user document."""
         schema = userSchema()
+        main_data=schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = USER_COLLECTION.insert_one(data)
+        result = USER_COLLECTION.insert_one(main_data)
         return data
 
     @staticmethod

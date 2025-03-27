@@ -9,8 +9,8 @@ class UserLocationSchema(Schema):
     UserLocationId = fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
-    CreatedDate = fields.DateTime(default=datetime.utcnow)
-    ModifiedDate = fields.DateTime(default=datetime.utcnow)
+    CreatedDate = fields.DateTime(missing=lambda: datetime.utcnow)
+    ModifiedDate = fields.DateTime(missing=lambda: datetime.utcnow)
     Latitude = fields.Float(required=True)
     Longitude = fields.Float(required=True)
     CityId = fields.UUID(required=True)
@@ -38,10 +38,11 @@ class User_Location:
     def insert_user_location( data):
         """Inserts a new user_device document."""
         schema = UserLocationSchema()
+        main_data=schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = USER_LOCATION_COLLECTION.insert_one(data)
+        result = USER_LOCATION_COLLECTION.insert_one(main_data)
         return str(result.inserted_id)
 
     @staticmethod
