@@ -156,7 +156,7 @@ class Place:
 
         for item in update_data:
             place_id = item.get("PlaceId")
-            current_popularity = item.get("CurrentPopularity")
+            current_popularity = item.get("Currentpopularity")
             if place_id and current_popularity is not None:
                 bulk_updates.append(
                     UpdateOne(
@@ -166,9 +166,10 @@ class Place:
                         },  # Update field
                     )
                 )
-
+        print(bulk_updates)
         if bulk_updates:
             result = PLACE_COLLECTION.bulk_write(bulk_updates)
+            print(result)
             return result.modified_count  # Number of documents updated
         return 0
 
