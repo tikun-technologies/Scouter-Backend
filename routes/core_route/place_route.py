@@ -20,9 +20,11 @@ def get_places():
         page = int(data.get("page", 1))
         page_size = int(data.get("pageSize", 10))
         include_distance = data.get("IncludeCalculateDistance", False)
-        user_id = data.get("userId", False)
+        user_id = data.get("userId", None)
+        if user_id==None:
+            return jsonify({"error": "User Id should not be null"}), 500
         result = Place.get_places(filters,user_id, page, page_size)
-        result["data"].sort(key=lambda x:x.get("CurrentPopularity", 0), reverse=True)
+        # result["data"].sort(key=lambda x:x.get("CurrentPopularity", 0), reverse=True)
         # print( type(result["data"]))
         # print( result["data"])
         if include_distance:

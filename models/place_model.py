@@ -99,6 +99,7 @@ class Place:
         }
     },
              # Optional: Flatten cityData
+              {"$sort": {"CurrentPopularity": -1}},
             {"$skip": skip},  # Apply pagination
             {"$limit": page_size}  # Apply page size limit
         ]
