@@ -1,7 +1,7 @@
 # import concurrent
 # from models.activity_model import Activity
 from pymongo import UpdateOne
-from config.db_config import ACTIVITY_COLLECTION, USER_COLLECTION,USER_DEVICE_COLLECTION,PLACE_COLLECTION
+from config.db_config import ACTIVITY_COLLECTION, USER_COLLECTION,USER_DEVICE_COLLECTION,PLACE_COLLECTION,USER_LOCATION_COLLECTION
 import requests
 
 # fetch_url = "https://portal.maiden-ai.com/api/v1/cube/Scouter Galactic Pvt Ltd/night life/scoutermap/Place/list"
@@ -64,8 +64,7 @@ for doc in cursor:
 #     UpdateOne({"PlaceId": doc["PlaceId"]}, {"$setOnInsert": doc}, upsert=True)
 #     for doc in aaaaa
 # ]
-
-
+USER_LOCATION_COLLECTION.delete_many({})
 
 
 # # ✅ Execute bulk operation

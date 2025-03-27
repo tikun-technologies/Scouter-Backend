@@ -6,8 +6,8 @@ class NotificationSchema(Schema):
     AppNotificationId = fields.Str(required=True)  # Unique ID for the notification
     CreatedBy = fields.Str(allow_none=True)  
     ModifiedBy = fields.Str(allow_none=True)
-    CreatedDate = fields.DateTime(missing=lambda: datetime.utcnow())
-    ModifiedDate = fields.DateTime(missing=lambda: datetime.utcnow())
+    # CreatedDate = fields.DateTime(missing=lambda: datetime.utcnow())
+    # ModifiedDate = fields.DateTime(missing=lambda: datetime.utcnow())
     IsRead = fields.Bool(missing=False)
     UserId = fields.Str(allow_none=True)
     RepliedUserId = fields.Str(allow_none=True)

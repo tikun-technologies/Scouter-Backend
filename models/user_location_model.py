@@ -38,11 +38,11 @@ class User_Location:
     def insert_user_location( data):
         """Inserts a new user_device document."""
         schema = UserLocationSchema()
-        main_data=schema.load(data)
+        # main_data=schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
-        result = USER_LOCATION_COLLECTION.insert_one(main_data)
+        result = USER_LOCATION_COLLECTION.insert_one(data)
         return str(result.inserted_id)
 
     @staticmethod
