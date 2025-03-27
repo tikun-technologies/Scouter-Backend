@@ -40,6 +40,7 @@ class Notification:
         data = list(NOTIFICATION_COLLECTION.find(filters).skip(skip).limit(page_size))
         total = NOTIFICATION_COLLECTION.count_documents(filters)
         return {
+            "success":True,
             "data": data,
             "page": page,
             "pageSize": page_size,
