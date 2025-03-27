@@ -1,5 +1,5 @@
 from datetime import datetime
-from config.db_config import PLACE_COLLECTION
+from config.db_config import PLACE_COLLECTION,USER_COLLECTION
 from marshmallow import Schema,fields,validate
 from pymongo import UpdateOne
 
@@ -85,10 +85,24 @@ class PlaceSchema(Schema):
 
 
 class Place:
-    def get_places( filters, page, page_size):
+    def get_places( filters,user_id, page, page_size):
         """Fetches places with applied filters and pagination."""
+        user=USER_COLLECTION.find_one({"UserId":user_id})
+        print(user)
+        print(user["favourite"]["favouritePlace"])
         skip = (page - 1) * page_size
-        data = list(PLACE_COLLECTION.find(filters).skip(skip).limit(page_size))
+        pipeline = [
+            {"$match": filters},  # Apply filters
+            {
+        "$addFields": {
+            "IsFavourite": {"$in": ["$PlaceId", user["favourite"]["favouritePlace"]]}  # ✅ Check if PlaceId is in the user's favourite list
+        }
+    },
+             # Optional: Flatten cityData
+            {"$skip": skip},  # Apply pagination
+            {"$limit": page_size}  # Apply page size limit
+        ]
+        data = list(PLACE_COLLECTION.aggregate(pipeline))
         total = PLACE_COLLECTION.count_documents(filters)
         return {
             "success":True,
