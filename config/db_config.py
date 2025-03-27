@@ -12,3 +12,4 @@ ACTIVITY_COLLECTION = db['ACTIVITY']
 NOTIFICATION_COLLECTION = db['NOTIFICATION']
 PLACE_COLLECTION.create_index([("location", GEOSPHERE)])
 print("connected to db ")
+print(PLACE_COLLECTION.index_information())

@@ -1,16 +1,16 @@
 from datetime import datetime
-from config.db_config import PLACE_COLLECTION,USER_COLLECTION
-from marshmallow import Schema,fields,validate
+from config.db_config import PLACE_COLLECTION, USER_COLLECTION
+from marshmallow import Schema, fields, validate
 from pymongo import UpdateOne
 
 
 class PlaceSchema(Schema):
-    _id=fields.Str(required=True)
+    _id = fields.Str(required=True)
     CreatedBy = fields.Str()
     ModifiedBy = fields.Str()
     CreatedDate = fields.DateTime(lambda: datetime.utcnow())
     ModifiedDate = fields.DateTime(lambda: datetime.utcnow())
-    PlaceId=fields.Str(required=True)
+    PlaceId = fields.Str(required=True)
     CityId = fields.Str(required=True)
     PlaceName = fields.Str(required=True)
     Country = fields.Str(required=True)
@@ -75,49 +75,64 @@ class PlaceSchema(Schema):
     PopularityType = fields.Str(allow_none=True)
     OpeningStart = fields.Str(allow_none=True)
     OpeningEnd = fields.Str(allow_none=True)
-    
-    
-    
-
-
-
-
 
 
 class Place:
-    def get_places( filters,user_id, page, page_size):
+    def get_places(filters, user_id, latitude, longitude,max_distance, page, page_size):
         """Fetches places with applied filters and pagination."""
-        user=USER_COLLECTION.find_one({"UserId":user_id})
+        user = USER_COLLECTION.find_one({"UserId": user_id})
         print(user)
         # print(user["favourite"]["favouritePlace"])
         skip = (page - 1) * page_size
         pipeline = [
-            {"$match": filters},  # Apply filters
             {
-        "$addFields": {
-            "IsFavourite": {"$in": ["$PlaceId", user["favourite"]["favouritePlace"]]}  # ✅ Check if PlaceId is in the user's favourite list
-        }
-    },
-             # Optional: Flatten cityData
-              {"$sort": {"CurrentPopularity": -1}},
+                "$geoNear": {
+                    "near": {
+                        "type": "Point",
+                        "coordinates": [longitude, latitude],
+                    },  # User's current location
+                    "distanceField": "distance",  # Field to store calculated distance
+                    "spherical": True,  # Use spherical calculation for real-world accuracy
+                    "key": "location",
+                    "maxDistance": int(max_distance)*1000# Specify the location field
+                }
+            },
+            {"$match": filters},  # Apply filters after distance calculation
+            {
+                "$addFields": {
+                    "IsFavourite": {
+                        "$in": ["$PlaceId", user["favourite"]["favouritePlace"]]
+                    }  # Check if PlaceId is in the user's favourite list
+                }
+            },
+            {
+                "$sort": {"distance": 1, "CurrentPopularity": -1}
+            },  # ✅ Sort: Nearest first, then most popular
             {"$skip": skip},  # Apply pagination
-            {"$limit": page_size}  # Apply page size limit
+            {"$limit": page_size},  # Apply page size limit
         ]
         data = list(PLACE_COLLECTION.aggregate(pipeline))
-        total = PLACE_COLLECTION.count_documents(filters)
+        total = PLACE_COLLECTION.count_documents({
+    "location": {
+        "$geoWithin": {
+            "$centerSphere": [[longitude, latitude], (int(max_distance) * 1000) / 6371000]  # Convert max_distance to radians
+        }
+    },
+    **filters  # Apply additional filters
+})
         return {
-            "success":True,
+            "success": True,
             "data": data,
             "page": page,
             "pageSize": page_size,
-            "total": total
+            "total": total,
         }
 
     @staticmethod
-    def insert_place( data):
+    def insert_place(data):
         """Inserts a new place document."""
         schema = PlaceSchema()
-        main_data=schema.load(data)
+        main_data = schema.load(data)
         errors = schema.validate(data)
         if errors:
             return {"error": errors}
@@ -125,17 +140,20 @@ class Place:
         return str(result.inserted_id)
 
     @staticmethod
-    def update_place( place_id, update_data):
+    def update_place(place_id, update_data):
         """Updates an existing place document."""
-        result = PLACE_COLLECTION.update_one({"PlaceId": place_id}, {"$set": update_data})
+        result = PLACE_COLLECTION.update_one(
+            {"PlaceId": place_id}, {"$set": update_data}
+        )
         print(result)
         return result.modified_count > 0
+
     @staticmethod
     def update_many(update_data):
         """Updates an existing place document."""
         # Create a list of update operations
         bulk_updates = []
-        
+
         for item in update_data:
             place_id = item.get("PlaceId")
             current_popularity = item.get("CurrentPopularity")
@@ -143,7 +161,9 @@ class Place:
                 bulk_updates.append(
                     UpdateOne(
                         {"PlaceId": place_id},  # Filter by PlaceId
-                        {"$set": {"CurrentPopularity": current_popularity}}  # Update field
+                        {
+                            "$set": {"CurrentPopularity": current_popularity}
+                        },  # Update field
                     )
                 )
 
@@ -153,7 +173,7 @@ class Place:
         return 0
 
     @staticmethod
-    def delete_place( place_id):
+    def delete_place(place_id):
         """Deletes a place document."""
         result = PLACE_COLLECTION.delete_one({"PlaceId": place_id})
         return result.deleted_count > 0

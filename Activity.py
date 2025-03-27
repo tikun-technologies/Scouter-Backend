@@ -48,11 +48,9 @@ import requests
    
     
     
-    
-users=USER_COLLECTION.delete_many({})
-print(users)
-    
-    
+cursor = PLACE_COLLECTION.find({}, {"location": 1}).limit(5)
+for doc in cursor:
+    print(doc)
 # ACTIVITY_COLLECTION.update_many({},  # Filter: Select documents where LikeCount is 0
 #     {"$set": {"LikeCount": 0}} )
 # # aa=list(USER_DEVICE_COLLECTION.find({}))

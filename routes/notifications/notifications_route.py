@@ -38,7 +38,7 @@ def create_notification():
         notification_data["_id"] = _id
         notification_data["CreatedBy"] = get_jwt_identity()
         inserted_id = Notification.insert_user_notification(notification_data)
-        return jsonify({"message": "notification added successfully", "id": inserted_id}), 201
+        return jsonify({"success":True,"message": "notification added successfully", "id": inserted_id}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -57,11 +57,11 @@ def update_notification():
         
         updated = Notification.update_or_insert_user_notification(notification_id, data)
         if updated:
-            return jsonify({"message": "notification updated successfully"}), 200
+            return jsonify({"success":True,"message": "notification updated successfully"}), 200
         else:
-            return jsonify({"error": "notification not found"}), 404
+            return jsonify({"success":False,"error": "notification not found"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success":False,"error": str(e)}), 500
 
 
 # ✅ Delete a notification
