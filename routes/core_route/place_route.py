@@ -111,7 +111,7 @@ def update_current_popularity():
     """Update an existing place by PlaceId."""
     try:
         data = request.get_json()
-        print(data)
+        # print(data)
         updated = Place.update_many(data)
         if updated:
             return jsonify({"message": "Place updated successfully"}), 200

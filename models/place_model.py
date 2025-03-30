@@ -166,7 +166,7 @@ class Place:
                         },  # Update field
                     )
                 )
-        print(bulk_updates)
+        # print(bulk_updates)
         if bulk_updates:
             result = PLACE_COLLECTION.bulk_write(bulk_updates)
             print(result)
