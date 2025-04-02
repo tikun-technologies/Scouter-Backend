@@ -321,70 +321,89 @@ def UserLocation_Insert():
 @home_bp.route("/GetEvents", methods=["POST"])
 @protected
 def GetEvents():
-    data = request.get_json()
+    try: 
+        data = request.get_json()
 
-    now = datetime.utcnow()
-    start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_today = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        now = datetime.utcnow()
+        start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_today = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    start_of_week = start_of_today - timedelta(
-        days=start_of_today.weekday()
-    )  # Monday start
-    end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
+        start_of_week = start_of_today - timedelta(
+            days=start_of_today.weekday()
+        )  # Monday start
+        end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-    # Fetch all events
-    user_id = data.get("userId", "")
-    city_id = data.get("cityId", "")
+        # Fetch all events
+        user_id = data.get("userId", "")
+        city_id = data.get("cityId", "")
 
-    user = USER_COLLECTION.find_one({"_id": user_id}, {"favourite.favouriteEvent": 1})
-    print("user : ", user)
-    events = list(
-        ACTIVITY_COLLECTION.find(
-            {
-                "CityId": city_id,
-                "ActivityType": {"$regex": "^EVENT$", "$options": "i"},
-            }
+        user = USER_COLLECTION.find_one({"_id": user_id}, {"favourite.favouriteEvent": 1})
+        if not user:
+            return jsonify({"error":f"user with user id :- {user_id} not found ","success":False})
+        print("user : ", user)
+        events = list(
+            ACTIVITY_COLLECTION.find(
+                {
+                    "CityId": city_id,
+                    "ActivityType": {"$regex": "^EVENT$", "$options": "i"},
+                }
+            )
         )
-    )
 
-    tonight_events = []
-    this_week_events = []
-    upcoming_events = []
+        tonight_events = []
+        this_week_events = []
+        upcoming_events = []
 
-    for event in events:
+        for event in events:
+            migrated_date = event.get("StartTime")
+            print(migrated_date)
+            if isinstance(migrated_date, str):
+                try:
+                    migrated_date = datetime.strptime(migrated_date, "%Y-%m-%dT%H:%M:%S")  # Adjust format if needed
+                except ValueError:
+                    migrated_date = None  # Skip invalid dates
 
-        migrated_date = event.get("MigratedDate")
+            # Categorize events
+            formatted_event = format_event(event, user["favourite"]["favouriteEvent"])
+            
+            print("migrated_date:= ",migrated_date)
+            print("start_of_today:= ",start_of_today)
+            print("end_of_today:= ",end_of_today)
+            print("start_of_week:= ",start_of_week)
+            print("end_of_week:= ",end_of_week)
+            
+            
+            if migrated_date and start_of_today <= migrated_date <= end_of_today:
+                tonight_events.append((migrated_date, formatted_event))
+            elif migrated_date and start_of_week <= migrated_date <= end_of_week:
+                this_week_events.append((migrated_date, formatted_event))
+            else:
+                upcoming_events.append((migrated_date, formatted_event))
 
-        if isinstance(migrated_date, str):
-            try:
-                print("migrated d ate ")
-                migrated_date = datetime.strptime(
-                    migrated_date, "%Y-%m-%dT%H:%M:%S"
-                )  # Adjust format if needed
-            except ValueError:
-                migrated_date = None  # Skip invalid dates
+        # Sort the lists by date (ascending order)
+        tonight_events.sort(key=lambda x: x[0])
+        this_week_events.sort(key=lambda x: x[0])
+        upcoming_events.sort(key=lambda x: x[0])
 
-        # Categorize events
-        formatted_event = format_event(event, user["favourite"]["favouriteEvent"])
-
-        if migrated_date and start_of_today <= migrated_date <= end_of_today:
-            tonight_events.append(formatted_event)
-        elif migrated_date and start_of_week <= migrated_date <= end_of_week:
-            this_week_events.append(formatted_event)
-        else:
-            upcoming_events.append(formatted_event)
+        # Extract only formatted events from sorted lists
+        tonight_events = [event[1] for event in tonight_events]
+        this_week_events = [event[1] for event in this_week_events]
+        upcoming_events = [event[1] for event in upcoming_events]
 
         # Response formatting
-    response = {
-        "success": True,
-        "data": {
-            "tonight": tonight_events,
-            "thisWeek": this_week_events,
-            "upcoming": upcoming_events,
-        },
-    }
+        response = {
+            "success": True,
+            "data": {
+                "tonight": tonight_events,
+                "thisWeek": this_week_events,
+                "upcoming": upcoming_events,
+            },
+        }
 
-    return jsonify(response), 200
+        return jsonify(response), 200
+    except Exception as err:
+        return jsonify({"error":str(err),"success":False}), 200
+        
 
 
 @home_bp.route("/update-activity", methods=["POST"])
