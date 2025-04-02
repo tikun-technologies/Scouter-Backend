@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 import math
 import uuid
 from flask import jsonify
@@ -140,7 +141,15 @@ def find_closest_place(collection, lat, lon, max_distance=30):
     return nearby_result.get("PlaceId") if nearby_result else None  # ✅ Return nearest or None
 
 
-
+def parse_datetime(date_str):
+    """Parses datetime with and without milliseconds"""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f")  # With milliseconds
+    except ValueError:
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")  # Without milliseconds
+        except ValueError:
+            return None
 
 
 def format_event(event, favourite_event_ids):

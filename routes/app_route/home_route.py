@@ -21,6 +21,7 @@ from utils.helper import (
     get_activities,
     get_activities_home_page,
     haversine_distance,
+    parse_datetime,
     protected,
     send_notifications_to_all,
     upload_to_azure,
@@ -350,57 +351,40 @@ def GetEvents():
             )
         )
 
-        tonight_events = []
-        this_week_events = []
-        upcoming_events = []
+        # Categorize events using optimized list comprehensions
+        tonight_events = [
+            (migrated_date, format_event(event, user["favourite"]["favouriteEvent"]))
+            for event in events
+            if (migrated_date := parse_datetime(event.get("StartTime"))) and start_of_today <= migrated_date <= end_of_today
+        ]
 
-        for event in events:
-            migrated_date = event.get("StartTime")
-            print(migrated_date)
-            if isinstance(migrated_date, str):
-                try:
-                    migrated_date = datetime.strptime(migrated_date, "%Y-%m-%dT%H:%M:%S")  # Adjust format if needed
-                except ValueError:
-                    migrated_date = None  # Skip invalid dates
+        this_week_events = [
+            (migrated_date, format_event(event, user["favourite"]["favouriteEvent"]))
+            for event in events
+            if (migrated_date := parse_datetime(event.get("StartTime"))) and start_of_week <= migrated_date <= end_of_week
+        ]
 
-            # Categorize events
-            formatted_event = format_event(event, user["favourite"]["favouriteEvent"])
-            
-            print("migrated_date:= ",migrated_date)
-            print("start_of_today:= ",start_of_today)
-            print("end_of_today:= ",end_of_today)
-            print("start_of_week:= ",start_of_week)
-            print("end_of_week:= ",end_of_week)
-            
-            
-            if migrated_date and start_of_today <= migrated_date <= end_of_today:
-                tonight_events.append((migrated_date, formatted_event))
-            elif migrated_date and start_of_week <= migrated_date <= end_of_week:
-                this_week_events.append((migrated_date, formatted_event))
-            else:
-                upcoming_events.append((migrated_date, formatted_event))
+        upcoming_events = [
+            (migrated_date, format_event(event, user["favourite"]["favouriteEvent"]))
+            for event in events
+            if (migrated_date := parse_datetime(event.get("StartTime"))) and migrated_date > end_of_week
+        ]
 
-        # Sort the lists by date (ascending order)
-        tonight_events.sort(key=lambda x: x[0])
-        this_week_events.sort(key=lambda x: x[0])
-        upcoming_events.sort(key=lambda x: x[0])
+        # Sort and extract efficiently
+        tonight_events = [event[1] for event in sorted(tonight_events, key=lambda x: x[0])]
+        this_week_events = [event[1] for event in sorted(this_week_events, key=lambda x: x[0])]
+        upcoming_events = [event[1] for event in sorted(upcoming_events, key=lambda x: x[0])]
 
-        # Extract only formatted events from sorted lists
-        tonight_events = [event[1] for event in tonight_events]
-        this_week_events = [event[1] for event in this_week_events]
-        upcoming_events = [event[1] for event in upcoming_events]
-
-        # Response formatting
-        response = {
+        return jsonify({
             "success": True,
             "data": {
                 "tonight": tonight_events,
                 "thisWeek": this_week_events,
                 "upcoming": upcoming_events,
-            },
-        }
+            }
+        }), 200
 
-        return jsonify(response), 200
+       
     except Exception as err:
         return jsonify({"error":str(err),"success":False}), 200
         
